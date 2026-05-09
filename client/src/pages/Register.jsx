@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { setCredentials } from '../redux/authSlice';
 
 import Navbar from '../components/Navbar'; 
 import Footer from '../components/Footer'; 
@@ -8,28 +10,52 @@ const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setLoading(true);
+
     try {
-      // API call register route par jayegi
       const response = await fetch('http://localhost:5000/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
       });
+      
       const data = await response.json();
       
       if (response.ok) {
-        alert('Registration successful! Please sign in.');
-        navigate('/login'); // Register hone ke baad login par bhej do
+        // --- AUTO LOGIN LOGIC START ---
+        // 1. Storage Sync (sessionStorage as per your App.jsx)
+        if (data.token && data.user) {
+          sessionStorage.setItem('token', data.token);
+          sessionStorage.setItem('user', JSON.stringify(data.user));
+
+          // 2. Redux Sync
+          dispatch(setCredentials({ 
+            token: data.token, 
+            user: data.user 
+          }));
+
+          console.log("Registration & Auto-Login Successful!");
+          navigate('/dashboard'); 
+        } else {
+          // Agar backend token nahi bhej raha, toh login par bhej do
+          alert('Registration successful! Please login.');
+          navigate('/login');
+        }
+        // --- AUTO LOGIN LOGIC END ---
       } else {
         alert(data.message || 'Registration failed. Please try again.');
       }
     } catch (error) {
       console.error("Registration Error:", error);
-      alert('Server se connect nahi ho pa raha hai.');
+      alert('Server connect nahi ho pa raha hai.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -37,7 +63,6 @@ const Register = () => {
     <>
       <Navbar />
 
-      {/* ================= CUSTOM PREMIUM CSS ANIMATIONS ================= */}
       <style>{`
         @keyframes float {
           0%, 100% { transform: translateY(0px) scale(1); }
@@ -59,12 +84,11 @@ const Register = () => {
           background: linear-gradient(to right, transparent, rgba(255,255,255,0.4), transparent);
           transform: skewX(-25deg); animation: sweep 3s infinite;
         }
+        .perspective-1000 { perspective: 1000px; }
       `}</style>
 
-      {/* Main Content Area */}
       <div className="min-h-screen relative font-sans text-white flex items-center justify-center overflow-hidden bg-[#050505]">
         
-        {/* CINEMATIC BACKGROUND */}
         <div 
           className="absolute inset-0 bg-cover bg-center z-0 opacity-40 mix-blend-luminosity"
           style={{ backgroundImage: "url('https://images.unsplash.com/photo-1519681393784-d120267933ba?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80')" }} 
@@ -72,12 +96,9 @@ const Register = () => {
         
         <div className="absolute top-[10%] left-[15%] w-[600px] h-[600px] bg-[#0088a9]/20 rounded-full blur-[130px] z-0 pointer-events-none animate-float"></div>
         <div className="absolute bottom-[5%] right-[10%] w-[500px] h-[500px] bg-[#ffc000]/15 rounded-full blur-[120px] z-0 pointer-events-none animate-float-delayed"></div>
-        <div className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: "url('data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E')" }}></div>
-
-        {/* MAIN CONTAINER */}
+        
         <div className="relative z-10 flex flex-col md:flex-row w-full justify-between max-w-7xl mx-auto px-6 pt-[150px] pb-[100px]">
           
-          {/* LEFT SIDE: Typography */}
           <div className="w-full md:w-1/2 p-4 md:pr-16 flex flex-col justify-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md w-max mb-8 shadow-[0_0_15px_rgba(0,136,169,0.2)]">
               <span className="w-2 h-2 rounded-full bg-[#0088a9] animate-pulse"></span>
@@ -93,7 +114,6 @@ const Register = () => {
               Create a free account today to transform raw data into stunning visual insights and make smarter decisions.
             </p>
             
-            {/* Premium Social Icons */}
             <div className="flex space-x-4 mt-2">
               <a href="https://x.com/akshatrp17" target="_blank" rel="noopener noreferrer" className="group flex items-center justify-center w-12 h-12 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-sm hover:bg-[#ffc000] hover:-translate-y-2 hover:shadow-[0_10px_20px_rgba(255,192,0,0.3)] transition-all duration-300">
                 <svg className="w-5 h-5 text-gray-400 group-hover:text-black transition-colors" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
@@ -101,13 +121,9 @@ const Register = () => {
               <a href="https://github.com/Akshat-12345" target="_blank" rel="noopener noreferrer" className="group flex items-center justify-center w-12 h-12 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-sm hover:bg-[#ffc000] hover:-translate-y-2 hover:shadow-[0_10px_20px_rgba(255,192,0,0.3)] transition-all duration-300">
                 <svg className="w-6 h-6 text-gray-400 group-hover:text-black transition-colors" fill="currentColor" viewBox="0 0 24 24"><path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" /></svg>
               </a>
-              <a href="mailto:akshatbajpai@gmail.com" className="group flex items-center justify-center w-12 h-12 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-sm hover:bg-[#ffc000] hover:-translate-y-2 hover:shadow-[0_10px_20px_rgba(255,192,0,0.3)] transition-all duration-300">
-                <svg className="w-5 h-5 text-gray-400 group-hover:text-black transition-colors" fill="currentColor" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" /></svg>
-              </a>
             </div>
           </div>
 
-          {/* RIGHT SIDE: THE ULTRA-PREMIUM CARD */}
           <div className="w-full md:w-5/12 flex justify-center md:justify-end mt-16 md:mt-0 relative group perspective-1000">
             <div className="absolute inset-0 bg-gradient-to-br from-[#0088a9] via-[#ffc000] to-[#00b4d8] rounded-3xl blur-md opacity-20 group-hover:opacity-40 transition-opacity duration-500"></div>
             <div className="w-full relative p-[1px] rounded-3xl bg-gradient-to-br from-white/20 via-transparent to-white/5">
@@ -120,7 +136,6 @@ const Register = () => {
 
                 <form className="space-y-6" onSubmit={handleRegister}>
                   
-                  {/* Full Name Input */}
                   <div className="relative group/input">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
                       <svg className="w-5 h-5 text-gray-500 group-focus-within/input:text-[#0088a9] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
@@ -136,7 +151,6 @@ const Register = () => {
                     </label>
                   </div>
 
-                  {/* Email Input */}
                   <div className="relative group/input">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
                       <svg className="w-5 h-5 text-gray-500 group-focus-within/input:text-[#0088a9] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"></path></svg>
@@ -152,7 +166,6 @@ const Register = () => {
                     </label>
                   </div>
 
-                  {/* Password Input */}
                   <div className="relative group/input">
                     <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-10">
                       <svg className="w-5 h-5 text-gray-500 group-focus-within/input:text-[#0088a9] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
@@ -168,15 +181,14 @@ const Register = () => {
                     </label>
                   </div>
 
-                  {/* Submit Button */}
                   <button 
                     type="submit" 
-                    className="btn-shine w-full bg-[#ffc000] text-black font-extrabold py-4 mt-8 rounded-xl transition-all duration-300 transform hover:-translate-y-1 shadow-[0_10px_30px_-10px_rgba(255,192,0,0.6)]"
+                    disabled={loading}
+                    className={`btn-shine w-full bg-[#ffc000] text-black font-extrabold py-4 mt-8 rounded-xl transition-all duration-300 transform hover:-translate-y-1 shadow-[0_10px_30px_-10px_rgba(255,192,0,0.6)] ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
                   >
-                    Create Account
+                    {loading ? 'Processing...' : 'Create Account'}
                   </button>
 
-                  {/* Login Link */}
                   <div className="mt-6 text-center text-sm text-gray-400">
                     Already have an account?{' '}
                     <Link to="/login" className="text-[#0088a9] font-semibold hover:text-white transition-colors duration-300">
