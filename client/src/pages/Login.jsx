@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useDispatch } from 'react-redux'; // Redux dispatch ke liye
+import { setCredentials } from '../redux/authSlice'; // Credential set karne ke liye
 
 import Navbar from '../components/Navbar'; 
 import Footer from '../components/Footer'; 
@@ -7,26 +9,44 @@ import Footer from '../components/Footer';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false); // Loading state add kiya
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setLoading(true);
+
     try {
       const response = await fetch('http://localhost:5000/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.trim(), password }),
       });
+
       const data = await response.json();
+
       if (response.ok) {
-        localStorage.setItem('token', data.token);
+        // 1. Storage Sync: App.jsx sessionStorage mang raha hai
+        sessionStorage.setItem('token', data.token);
+        sessionStorage.setItem('user', JSON.stringify(data.user));
+
+        // 2. Redux Sync: Instant state update taaki ProtectedRoute allow kare
+        dispatch(setCredentials({ 
+            token: data.token, 
+            user: data.user 
+        }));
+
+        console.log("Login Success! Navigating to dashboard...");
         navigate('/dashboard');
       } else {
         alert(data.message || 'Login failed. Please check your credentials.');
       }
     } catch (error) {
       console.error("Login Error:", error);
-      alert('Server se connect nahi ho pa raha hai.');
+      alert('Server se connect nahi ho pa raha hai. Check if backend is running on Port 5000.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -56,6 +76,7 @@ const Login = () => {
           background: linear-gradient(to right, transparent, rgba(255,255,255,0.4), transparent);
           transform: skewX(-25deg); animation: sweep 3s infinite;
         }
+        .perspective-1000 { perspective: 1000px; }
       `}</style>
 
       {/* Main Content Area */}
@@ -153,19 +174,19 @@ const Login = () => {
                   {/* Submit Button */}
                   <button 
                     type="submit" 
-                    className="btn-shine w-full bg-[#ffc000] text-black font-extrabold py-4 mt-8 rounded-xl transition-all duration-300 transform hover:-translate-y-1 shadow-[0_10px_30px_-10px_rgba(255,192,0,0.6)]"
+                    disabled={loading}
+                    className={`btn-shine w-full bg-[#ffc000] text-black font-extrabold py-4 mt-8 rounded-xl transition-all duration-300 transform hover:-translate-y-1 shadow-[0_10px_30px_-10px_rgba(255,192,0,0.6)] ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
                   >
-                    Authenticate
+                    {loading ? 'Authenticating...' : 'Authenticate'}
                   </button>
 
-                  {/* ================= NAYA REGISTRATION LINK YAHAN HAI ================= */}
+                  {/* Registration Link */}
                   <div className="mt-6 text-center text-sm text-gray-400">
                     New to SheetSense?{' '}
                     <Link to="/register" className="text-[#ffc000] font-semibold hover:text-white transition-colors duration-300">
                       Create an account
                     </Link>
                   </div>
-                  {/* ==================================================================== */}
 
                 </form>
 
