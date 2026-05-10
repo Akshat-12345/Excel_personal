@@ -27,16 +27,17 @@ const MissionSection = () => {
 
       <div className="flex h-screen w-full relative">
         
-        {/* LEFT PART: Data Analytic Visual (Moves UP) */}
+        {/* LEFT PART: Updated with story.png from public folder */}
         <div className="relative w-1/2 h-full overflow-hidden border-r border-white/5 bg-[#050505]">
           <motion.div 
             style={{ y: leftMove }}
             className="absolute inset-0 w-full h-[130%]" // Extra height to allow dramatic movement
           >
             <img 
-              src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2015" 
-              className="w-full h-full object-cover opacity-50grayscale hover:grayscale-0 transition-all duration-700"
+              src="/story.png" 
+              className="w-full h-full object-cover opacity-50 grayscale hover:grayscale-0 transition-all duration-700"
               alt="Data Analysis Visual"
+              onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=2015" }}
             />
           </motion.div>
         </div>
@@ -47,13 +48,13 @@ const MissionSection = () => {
             style={{ y: rightMove }}
             className="absolute inset-0 w-full h-[130%]"
           >
-            {/* PUBLIC FOLDER SE IMAGE UTHAYI HAI - Filter: brightness, contrast, saturate ko original jaisa dikhne ke liye optimize kiya gaya hai */}
+            {/* PUBLIC FOLDER SE IMAGE UTHAYI HAI */}
             <img 
               src="/top-barrel.jpg" 
               className="w-full h-full object-cover opacity-80"
               alt="Top Barrel Background Original"
               style={{ filter: "brightness(0.9) contrast(1.1) saturate(1.1)" }}
-              onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1558494949-ef010cbdcc48?q=80&w=2037" }} // Fallback if image not found
+              onError={(e) => { e.target.src = "https://images.unsplash.com/photo-1558494949-ef010cbdcc48?q=80&w=2037" }} 
             />
           </motion.div>
 
